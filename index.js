@@ -36,12 +36,32 @@ async function run () {
       res.send(item);
     })
 
+    // get all items of an user 
+    app.get('/myItems', async (req, res)=> {
+      const email = req.query.email;
+      const query = { supplier: email};
+      const cursor = itemCollection.find(query);
+      const items = await cursor.toArray();
+      res.send(items);
+    })
+
     //add item to inventory - post
     app.post('/inventory', async (req, res) => {
       const newItem = req.body;
       const result = await itemCollection.insertOne(newItem);
       res.send(result);
     })
+
+
+    //Delete item
+    app.delete('/inventory/:id', async (req, res)=> {
+      const id = req.params.id;
+      const query = {_id:ObjectId(id)};
+      const result = await itemCollection.deleteOne(query);
+      res.send(result);
+    })
+
+
   }
   finally {
 
@@ -51,7 +71,7 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-  res.send('Hellowa.....');
+  res.send('Hello.....');
 })
 
 app.listen(port, () => {
