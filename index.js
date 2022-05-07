@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
@@ -9,6 +10,12 @@ const port = process.env.PORT || 5000;
 // middlewares
 app.use(cors());
 app.use(express.json());
+
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  console.log("from verify--> ",authHeader);
+  next();
+}
 
 //---db----
 
@@ -21,6 +28,16 @@ async function run () {
     await client.connect();
     const itemCollection = client.db('pran-dealer-inventory').collection('item');
     
+    //AUTH
+    app.post("/getToken", (req, res) => {
+      const user = req.body;
+      const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: '1d'
+      });
+      res.send({accessToken});
+    })
+    
+    //SERVICES API
     //get all inventory items
     app.get('/inventory', async (req, res) => {
       const query = {};
@@ -38,7 +55,7 @@ async function run () {
     })
 
     // get all items of an user 
-    app.get('/myItems', async (req, res)=> {
+    app.get('/myItems', verifyJWT, async (req, res)=> {
       const email = req.query.email;
       const query = { supplier: email};
       const cursor = itemCollection.find(query);
